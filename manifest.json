@@ -1,0 +1,12 @@
+{
+  "name": "Lily Care",
+  "short_name": "Lily Care",
+  "description": "Lily's care task manager",
+  "start_url": "/lily-care-app/",
+  "display": "standalone",
+  "background_color": "#faf7f4",
+  "theme_color": "#faf7f4",
+  "icons": [
+    { "src": "lily-hero.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

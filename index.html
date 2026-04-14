@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Lily Care">
+  <title>Lily Care 🐾</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="lily-hero.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --cream:  #faf7f4;
+      --coral:  #ee6b51;
+      --brown:  #47301f;
+      --peach:  #fde8d8;
+      --mocha:  #8c6347;
+      --white:  #ffffff;
+      --border: #ede5dd;
+      --st: env(safe-area-inset-top, 0px);
+      --sb: env(safe-area-inset-bottom, 0px);
+    }
+    * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+    body {
+      font-family:'Nunito',-apple-system,sans-serif;
+      background:var(--cream);
+      position:fixed; inset:0;
+      overflow:hidden;
+    }
+
+    /* ── SCREENS ── */
+    .screen {
+      position:absolute; inset:0;
+      display:flex; flex-direction:column;
+      background:var(--cream);
+      transform:translateX(100%);
+      transition:transform .3s cubic-bezier(.4,0,.2,1);
+      overflow:hidden;
+    }
+    .screen.active  { transform:translateX(0); }
+    .screen.behind  { transform:translateX(-28%); }
+    #home { transform:translateX(0); }
+
+    .scroll {
+      flex:1; overflow-y:auto;
+      -webkit-overflow-scrolling:touch;
+      padding-bottom:calc(110px + var(--sb));
+    }
+
+    /* ── NAV BAR ── */
+    .nav {
+      display:flex; align-items:flex-end; justify-content:space-between;
+      padding: calc(var(--st) + 12px) 16px 10px;
+      background:var(--cream);
+      flex-shrink:0;
+    }
+    .nav-btn {
+      background:none; border:none;
+      font-family:inherit; font-size:16px; font-weight:700;
+      color:var(--coral); cursor:pointer; min-width:60px;
+    }
+    .nav-btn.left { text-align:left; }
+    .nav-btn.right { text-align:right; }
+    .nav-title { font-size:16px; font-weight:800; color:var(--brown); }
+
+    /* ── HOME ── */
+    .home-header {
+      text-align:center;
+      padding: calc(var(--st) + 28px) 20px 16px;
+    }
+    .lily-img {
+      width:120px; height:120px; border-radius:60px;
+      object-fit:cover;
+      border:4px solid var(--peach);
+      box-shadow:0 8px 24px rgba(238,107,81,.2);
+      display:block; margin:0 auto 12px;
+    }
+    .lily-fallback {
+      width:120px; height:120px; border-radius:60px;
+      background:var(--peach);
+      font-size:64px;
+      display:flex; align-items:center; justify-content:center;
+      margin:0 auto 12px;
+      border:4px solid var(--peach);
+      box-shadow:0 8px 24px rgba(238,107,81,.2);
+    }
+    .home-title { font-size:28px; font-weight:800; color:var(--brown); }
+    .home-sub   { font-size:14px; color:var(--mocha); margin-top:4px; }
+
+    .section { padding:0 20px; margin-bottom:28px; }
+    .section-title {
+      font-size:15px; font-weight:800; color:var(--brown);
+      margin-bottom:12px;
+    }
+
+    /* ── TASK ROW ── */
+    .task-row {
+      background:var(--white); border-radius:16px;
+      padding:14px; margin-bottom:10px;
+      display:flex; align-items:center; gap:14px;
+      cursor:pointer;
+      box-shadow:0 2px 8px rgba(0,0,0,.06);
+      transition:opacity .12s;
+      -webkit-user-select:none; user-select:none;
+    }
+    .task-row.urgent { background:rgba(253,232,216,.55); }
+    .task-row:active { opacity:.7; }
+
+    .task-icon {
+      width:50px; height:50px; border-radius:12px;
+      background:var(--cream);
+      display:flex; align-items:center; justify-content:center;
+      font-size:26px; flex-shrink:0;
+    }
+    .task-row.urgent .task-icon { background:var(--peach); }
+
+    .task-info { flex:1; min-width:0; }
+    .task-name {
+      font-size:15px; font-weight:700; color:var(--brown);
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    }
+    .task-due { font-size:12px; font-weight:600; color:var(--mocha); margin-top:2px; }
+    .task-due.red { color:var(--coral); }
+    .task-chev { color:rgba(140,99,71,.3); font-size:18px; flex-shrink:0; }
+
+    /* FAB */
+    .fab {
+      position:fixed;
+      right:24px; bottom:calc(32px + var(--sb));
+      width:60px; height:60px; border-radius:30px;
+      background:var(--coral); border:none; color:white;
+      font-size:30px; cursor:pointer;
+      display:flex; align-items:center; justify-content:center;
+      box-shadow:0 6px 20px rgba(238,107,81,.4);
+      z-index:50; transition:transform .12s;
+    }
+    .fab:active { transform:scale(.92); }
+
+    /* Empty state */
+    .empty { text-align:center; padding:80px 40px; }
+    .empty .big { font-size:72px; margin-bottom:12px; }
+    .empty h2 { font-size:22px; font-weight:800; color:var(--brown); }
+    .empty p  { font-size:14px; color:var(--mocha); margin-top:8px; }
+
+    /* ── DETAIL ── */
+    .hero-card {
+      margin:4px 20px 16px;
+      background:var(--white); border-radius:20px;
+      padding:28px 20px; text-align:center;
+      box-shadow:0 2px 10px rgba(0,0,0,.05);
+    }
+    .hero-card .big { font-size:60px; }
+    .hero-card h2   { font-size:22px; font-weight:800; color:var(--brown); margin-top:8px; }
+    .hero-card .due { font-size:14px; font-weight:600; color:var(--mocha); margin-top:4px; }
+    .hero-card .due.red { color:var(--coral); }
+
+    /* Info / history card */
+    .card {
+      margin:0 20px 16px;
+      background:var(--white); border-radius:16px;
+      overflow:hidden;
+      box-shadow:0 2px 8px rgba(0,0,0,.05);
+    }
+    .card-title {
+      font-size:15px; font-weight:800; color:var(--brown);
+      padding:14px 16px 2px;
+    }
+    .info-row {
+      display:flex; align-items:center;
+      padding:13px 16px; gap:12px;
+    }
+    .info-row + .info-row { border-top:1px solid var(--border); }
+    .info-row .ico  { font-size:17px; width:22px; text-align:center; flex-shrink:0; }
+    .info-row .lbl  { font-size:13px; font-weight:700; color:var(--mocha); flex:1; }
+    .info-row .val  { font-size:14px; font-weight:700; color:var(--brown); text-align:right; max-width:55%; }
+    .info-row a.val { color:var(--coral); }
+
+    .hist-item {
+      display:flex; align-items:center; gap:12px;
+      padding:12px 16px;
+    }
+    .hist-item + .hist-item { border-top:1px solid var(--border); }
+    .hist-check {
+      width:36px; height:36px; border-radius:18px;
+      background:var(--peach); flex-shrink:0;
+      display:flex; align-items:center; justify-content:center;
+      font-size:15px; font-weight:800; color:var(--coral);
+    }
+    .hist-who  { font-size:14px; font-weight:700; color:var(--brown); }
+    .hist-when { font-size:12px; color:var(--mocha); margin-top:1px; }
+    .hist-note { font-size:12px; color:var(--mocha); font-style:italic; margin-top:1px; }
+
+    /* ── BUTTONS ── */
+    .btn {
+      display:flex; align-items:center; justify-content:center; gap:8px;
+      width:calc(100% - 40px); margin:0 20px 12px;
+      padding:16px; border-radius:16px; border:none;
+      font-family:inherit; font-size:16px; font-weight:800;
+      cursor:pointer; transition:opacity .12s;
+    }
+    .btn:active { opacity:.8; }
+    .btn-primary { background:var(--coral); color:white; }
+    .btn-primary:disabled { background:#ccc; cursor:default; }
+    .btn-danger {
+      background:none; border:none;
+      font-family:inherit; font-size:15px; font-weight:700;
+      color:#d94f4f; cursor:pointer;
+      padding:10px; width:100%; text-align:center;
+    }
+
+    /* ── SHEET ── */
+    .overlay {
+      position:fixed; inset:0;
+      background:rgba(0,0,0,.38);
+      z-index:100; opacity:0;
+      transition:opacity .3s;
+      pointer-events:none;
+    }
+    .overlay.on { opacity:1; pointer-events:all; }
+
+    .sheet {
+      position:fixed; left:0; right:0; bottom:0;
+      background:var(--cream); border-radius:24px 24px 0 0;
+      padding:12px 0 calc(20px + var(--sb));
+      z-index:101;
+      transform:translateY(100%);
+      transition:transform .32s cubic-bezier(.4,0,.2,1);
+    }
+    .sheet.on { transform:translateY(0); }
+
+    .sheet-handle {
+      width:40px; height:4px; border-radius:2px;
+      background:var(--border);
+      margin:0 auto 20px;
+    }
+    .sheet-hero { text-align:center; padding:0 20px 16px; }
+    .sheet-hero .big  { font-size:48px; }
+    .sheet-hero .lbl  { font-size:13px; color:var(--mocha); font-weight:600; margin-top:8px; }
+    .sheet-hero .name { font-size:18px; font-weight:800; color:var(--brown); margin-top:4px; }
+
+    /* ── FORM ── */
+    .form-card {
+      margin:0 20px 14px;
+      background:var(--white); border-radius:16px;
+      overflow:hidden;
+      box-shadow:0 2px 8px rgba(0,0,0,.05);
+    }
+    .f-row {
+      padding:11px 16px;
+      display:flex; flex-direction:column; gap:3px;
+    }
+    .f-row.h { flex-direction:row; align-items:center; }
+    .f-row + .f-row { border-top:1px solid var(--border); }
+
+    .f-label {
+      font-size:11px; font-weight:800; color:var(--mocha);
+      text-transform:uppercase; letter-spacing:.5px;
+    }
+    .f-input {
+      border:none; background:none;
+      font-family:inherit; font-size:15px; font-weight:600;
+      color:var(--brown); outline:none; width:100%;
+    }
+    .f-input::placeholder { color:rgba(140,99,71,.38); font-weight:500; }
+    textarea.f-input { resize:none; }
+
+    .f-select {
+      border:none; background:none;
+      font-family:inherit; font-size:15px; font-weight:700;
+      color:var(--coral); outline:none; cursor:pointer;
+      -webkit-appearance:none; margin-left:auto;
+    }
+
+    input[type=date] {
+      border:none; background:none;
+      font-family:inherit; font-size:15px; font-weight:700;
+      color:var(--coral); outline:none; cursor:pointer;
+      margin-left:auto;
+    }
+
+    /* Toggle */
+    .tog { position:relative; width:51px; height:31px; flex-shrink:0; margin-left:auto; }
+    .tog input { display:none; }
+    .tog-track {
+      position:absolute; inset:0;
+      background:var(--border); border-radius:16px; cursor:pointer;
+      transition:background .2s;
+    }
+    .tog-track::before {
+      content:''; position:absolute;
+      width:27px; height:27px; border-radius:14px;
+      background:white; top:2px; left:2px;
+      transition:transform .2s;
+      box-shadow:0 1px 4px rgba(0,0,0,.2);
+    }
+    .tog input:checked + .tog-track { background:var(--coral); }
+    .tog input:checked + .tog-track::before { transform:translateX(20px); }
+
+    /* Emoji picker */
+    .emoji-card {
+      margin:0 20px 14px;
+      background:var(--white); border-radius:16px;
+      padding:16px; text-align:center;
+      box-shadow:0 2px 8px rgba(0,0,0,.05);
+    }
+    .emoji-big { font-size:52px; margin-bottom:10px; }
+    .emoji-grid {
+      display:grid; grid-template-columns:repeat(8,1fr); gap:6px;
+    }
+    .e-btn {
+      font-size:20px; padding:5px; border:none; background:none;
+      border-radius:8px; cursor:pointer; transition:background .12s;
+    }
+    .e-btn.on { background:var(--peach); }
+    .e-btn:active { background:var(--peach); }
+  </style>
+</head>
+<body>
+
+<!-- ══ HOME ══ -->
+<div id="home" class="screen active">
+  <div class="scroll">
+    <div class="home-header">
+      <img src="lily-hero.png" class="lily-img" id="lily-img"
+           onerror="this.style.display='none';document.getElementById('lily-fb').style.display='flex'">
+      <div class="lily-fallback" id="lily-fb" style="display:none">🐶</div>
+      <div class="home-title">Lily's Care</div>
+      <div class="home-sub">Here's what Lily needs 🐾</div>
+    </div>
+    <div id="task-list"></div>
+  </div>
+  <button class="fab" onclick="openAdd()">+</button>
+</div>
+
+<!-- ══ DETAIL ══ -->
+<div id="detail" class="screen">
+  <div class="nav">
+    <button class="nav-btn left" onclick="goBack()">‹ Back</button>
+    <span class="nav-title" id="d-title"></span>
+    <button class="nav-btn right" onclick="openEdit()">Edit</button>
+  </div>
+  <div class="scroll" id="d-content"></div>
+</div>
+
+<!-- ══ ADD / EDIT ══ -->
+<div id="add" class="screen">
+  <div class="nav">
+    <button class="nav-btn left" onclick="goBack()">Cancel</button>
+    <span class="nav-title" id="add-title">New Task</span>
+    <span style="min-width:60px"></span>
+  </div>
+  <div class="scroll">
+    <div class="emoji-card">
+      <div class="emoji-big" id="sel-emoji">🐾</div>
+      <div class="emoji-grid" id="emoji-grid"></div>
+    </div>
+    <div class="form-card">
+      <div class="f-row">
+        <div class="f-label">Task name</div>
+        <input class="f-input" id="f-name" type="text" placeholder="e.g. Buy dog food">
+      </div>
+      <div class="f-row h">
+        <div class="f-label">Recurring task</div>
+        <label class="tog">
+          <input type="checkbox" id="f-recur" checked onchange="toggleRecur()">
+          <div class="tog-track"></div>
+        </label>
+      </div>
+      <div id="freq-row" class="f-row h">
+        <div class="f-label">Repeat every</div>
+        <select class="f-select" id="f-freq">
+          <option value="7">Every week</option>
+          <option value="14">Every 2 weeks</option>
+          <option value="30" selected>Every month</option>
+          <option value="60">Every 2 months</option>
+          <option value="90">Every 3 months</option>
+          <option value="180">Every 6 months</option>
+          <option value="240">Every 8 months</option>
+          <option value="365">Every year</option>
+        </select>
+      </div>
+      <div class="f-row h">
+        <div class="f-label">Next due</div>
+        <input type="date" id="f-date">
+      </div>
+      <div class="f-row">
+        <div class="f-label">Shop link (optional)</div>
+        <input class="f-input" id="f-shop" type="url" placeholder="https://...">
+      </div>
+      <div class="f-row">
+        <div class="f-label">Notes (optional)</div>
+        <textarea class="f-input" id="f-notes" rows="2" placeholder="Any notes..."></textarea>
+      </div>
+    </div>
+    <button class="btn btn-primary" id="save-btn" onclick="saveTask()">Add task</button>
+    <button class="btn-danger" id="del-btn" style="display:none" onclick="deleteTask()">Delete task</button>
+  </div>
+</div>
+
+<!-- ══ CHECK-IN SHEET ══ -->
+<div class="overlay" id="ci-overlay" onclick="closeCI()"></div>
+<div class="sheet" id="ci-sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-hero">
+    <div class="big" id="ci-emoji"></div>
+    <div class="lbl">Marking done:</div>
+    <div class="name" id="ci-name"></div>
+  </div>
+  <div class="form-card" style="margin-bottom:14px">
+    <div class="f-row">
+      <div class="f-label">Who did it?</div>
+      <input class="f-input" id="ci-who" type="text" placeholder="Your name">
+    </div>
+    <div class="f-row">
+      <div class="f-label">Notes (optional)</div>
+      <input class="f-input" id="ci-notes" type="text" placeholder="Any notes...">
+    </div>
+  </div>
+  <button class="btn btn-primary" onclick="submitCI()">Done! 🐾</button>
+</div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script>
+// ── Config ──
+firebase.initializeApp({
+  apiKey: "AIzaSyAY4u99xPJCAcEskTUnbNZwDTAlvaoVVk",
+  authDomain: "lily-care-app.firebaseapp.com",
+  projectId: "lily-care-app",
+  storageBucket: "lily-care-app.firebasestorage.app",
+  messagingSenderId: "877919248654",
+  appId: "1:877919248654:web:eb2ac40c54e2015b7c775f"
+});
+const db = firebase.firestore();
+const col = db.collection('tasks');
+
+// ── State ──
+let tasks = [];
+let currentId = null;
+let editId    = null;
+let stack = ['home'];
+
+const EMOJIS = ['🐾','🍖','🥫','💊','🏥','✂️','🎀','🛁','🦴','🐶','⭐','📦','🧴','🪮','🎾','🏅'];
+
+// ── Dates ──
+const today    = () => new Date().toISOString().slice(0,10);
+const addDays  = (d,n) => { const x=new Date(d+'T12:00:00'); x.setDate(x.getDate()+n); return x.toISOString().slice(0,10); };
+const daysLeft = d => Math.round((new Date(d+'T12:00:00')-Object.assign(new Date(),{hours:0,minutes:0,seconds:0,ms:0}).setHours(0,0,0,0))/86400000);
+
+function dueLabel(d) {
+  const n = daysLeft(d);
+  if(n < -1) return `${-n} days overdue`;
+  if(n===-1) return '1 day overdue';
+  if(n===0)  return 'Due today';
+  if(n===1)  return 'Due tomorrow';
+  return `Due in ${n} days`;
+}
+function fmtDate(d) {
+  if(!d) return '—';
+  return new Date(d+'T12:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+}
+function freqLbl(n) {
+  return {7:'Every week',14:'Every 2 weeks',30:'Every month',60:'Every 2 months',
+          90:'Every 3 months',180:'Every 6 months',240:'Every 8 months',365:'Every year'}[n]||`Every ${n} days`;
+}
+
+// ── Navigation ──
+function push(id) {
+  const cur = stack[stack.length-1];
+  if(cur===id) return;
+  document.getElementById(cur).classList.remove('active');
+  document.getElementById(cur).classList.add('behind');
+  document.getElementById(id).classList.add('active');
+  stack.push(id);
+  const sc = document.getElementById(id).querySelector('.scroll');
+  if(sc) setTimeout(()=>sc.scrollTop=0, 50);
+}
+function goBack() {
+  if(stack.length<=1) return;
+  const cur = stack.pop();
+  const prv = stack[stack.length-1];
+  document.getElementById(cur).classList.remove('active');
+  document.getElementById(prv).classList.remove('behind');
+  document.getElementById(prv).classList.add('active');
+}
+
+// ── Firebase ──
+col.orderBy('nextDue').onSnapshot(snap => {
+  tasks = snap.docs.map(d=>({id:d.id,...d.data()}));
+  renderHome();
+  if(currentId) { const t=tasks.find(t=>t.id===currentId); if(t) renderDetail(t); }
+}, () => { if(!tasks.length) seed(); });
+
+function seed() {
+  [
+    {name:'Buy dog food',   emoji:'🍖',frequencyDays:30, nextDue:addDays(today(),-1)},
+    {name:'Buy canned food',emoji:'🥫',frequencyDays:14, nextDue:today()},
+    {name:'Medication',     emoji:'💊',frequencyDays:14, nextDue:addDays(today(),2)},
+    {name:'Vet appointment',emoji:'🏥',frequencyDays:null,nextDue:addDays(today(),15)},
+    {name:'Grooming',       emoji:'✂️',frequencyDays:60, nextDue:addDays(today(),28)},
+    {name:'Buy collar',     emoji:'🎀',frequencyDays:null,nextDue:addDays(today(),45)},
+  ].forEach(t=>col.add({...t,lastCompleted:null,shopLink:'',notes:'',completions:[]}));
+}
+
+// ── Home ──
+function renderHome() {
+  const urgent   = tasks.filter(t=>daysLeft(t.nextDue)<=3).sort((a,b)=>daysLeft(a.nextDue)-daysLeft(b.nextDue));
+  const upcoming = tasks.filter(t=>daysLeft(t.nextDue)>3) .sort((a,b)=>daysLeft(a.nextDue)-daysLeft(b.nextDue));
+  if(!tasks.length) {
+    document.getElementById('task-list').innerHTML=`<div class="empty"><div class="big">🎉</div><h2>All done!</h2><p>Lily is all taken care of</p></div>`;
+    return;
+  }
+  let h='';
+  const row = t => {
+    const red = daysLeft(t.nextDue)<0;
+    return `<div class="task-row${daysLeft(t.nextDue)<=3?' urgent':''}" onclick="openDetail('${t.id}')">
+      <div class="task-icon">${t.emoji}</div>
+      <div class="task-info">
+        <div class="task-name">${t.name}</div>
+        <div class="task-due${red?' red':''}">${dueLabel(t.nextDue)}</div>
+      </div>
+      <div class="task-chev">›</div>
+    </div>`;
+  };
+  if(urgent.length)   h+=`<div class="section"><div class="section-title">⚠️ Needs attention</div>${urgent.map(row).join('')}</div>`;
+  if(upcoming.length) h+=`<div class="section"><div class="section-title">📅 Coming up</div>${upcoming.map(row).join('')}</div>`;
+  document.getElementById('task-list').innerHTML=h;
+}
+
+// ── Detail ──
+function openDetail(id) {
+  currentId=id;
+  const t=tasks.find(t=>t.id===id); if(!t) return;
+  renderDetail(t); push('detail');
+}
+function renderDetail(t) {
+  document.getElementById('d-title').textContent=t.name;
+  const red=daysLeft(t.nextDue)<0;
+  let info=`
+    <div class="info-row"><span class="ico">🔁</span><span class="lbl">Frequency</span><span class="val">${t.frequencyDays?freqLbl(t.frequencyDays):'One-time'}</span></div>
+    ${t.lastCompleted?`<div class="info-row"><span class="ico">🕐</span><span class="lbl">Last done</span><span class="val">${fmtDate(t.lastCompleted)}</span></div>`:''}
+    <div class="info-row"><span class="ico">📅</span><span class="lbl">Next due</span><span class="val">${fmtDate(t.nextDue)}</span></div>
+    ${t.shopLink?`<div class="info-row"><span class="ico">🛒</span><span class="lbl">Shop link</span><a class="val" href="${t.shopLink}" target="_blank">Open ↗</a></div>`:''}
+    ${t.notes?`<div class="info-row"><span class="ico">📝</span><span class="lbl">Notes</span><span class="val">${t.notes}</span></div>`:''}`;
+  let hist='';
+  if(t.completions&&t.completions.length) {
+    hist=`<div class="card"><div class="card-title">History</div>`+
+      t.completions.slice(0,10).map(c=>`
+        <div class="hist-item">
+          <div class="hist-check">✓</div>
+          <div>
+            <div class="hist-who">${c.completedBy||'Someone'}</div>
+            <div class="hist-when">${fmtDate(c.date)}</div>
+            ${c.notes?`<div class="hist-note">${c.notes}</div>`:''}
+          </div>
+        </div>`).join('')+`</div>`;
+  }
+  document.getElementById('d-content').innerHTML=`
+    <div class="hero-card">
+      <div class="big">${t.emoji}</div>
+      <h2>${t.name}</h2>
+      <div class="due${red?' red':''}">${dueLabel(t.nextDue)}</div>
+    </div>
+    <div class="card">${info}</div>
+    <button class="btn btn-primary" onclick="openCI()">✓ Mark as done</button>
+    ${hist}`;
+}
+
+// ── Check-in ──
+function openCI() {
+  const t=tasks.find(t=>t.id===currentId); if(!t) return;
+  document.getElementById('ci-emoji').textContent=t.emoji;
+  document.getElementById('ci-name').textContent=t.name;
+  document.getElementById('ci-who').value='';
+  document.getElementById('ci-notes').value='';
+  document.getElementById('ci-overlay').classList.add('on');
+  document.getElementById('ci-sheet').classList.add('on');
+  setTimeout(()=>document.getElementById('ci-who').focus(),350);
+}
+function closeCI() {
+  document.getElementById('ci-overlay').classList.remove('on');
+  document.getElementById('ci-sheet').classList.remove('on');
+}
+function submitCI() {
+  const t=tasks.find(t=>t.id===currentId); if(!t) return;
+  const who=document.getElementById('ci-who').value.trim();
+  const note=document.getElementById('ci-notes').value.trim();
+  col.doc(currentId).update({
+    lastCompleted:today(),
+    nextDue:t.frequencyDays?addDays(today(),t.frequencyDays):t.nextDue,
+    completions:[{date:today(),completedBy:who,notes:note},...(t.completions||[])]
+  });
+  closeCI();
+}
+
+// ── Add / Edit ──
+function openAdd() {
+  editId=null;
+  document.getElementById('add-title').textContent='New Task';
+  document.getElementById('save-btn').textContent='Add task';
+  document.getElementById('del-btn').style.display='none';
+  resetForm(); push('add');
+}
+function openEdit() {
+  const t=tasks.find(t=>t.id===currentId); if(!t) return;
+  editId=currentId;
+  document.getElementById('add-title').textContent='Edit Task';
+  document.getElementById('save-btn').textContent='Save changes';
+  document.getElementById('del-btn').style.display='block';
+  setEmoji(t.emoji);
+  document.getElementById('f-name').value=t.name;
+  document.getElementById('f-recur').checked=!!t.frequencyDays;
+  document.getElementById('f-freq').value=t.frequencyDays||30;
+  document.getElementById('f-date').value=t.nextDue;
+  document.getElementById('f-shop').value=t.shopLink||'';
+  document.getElementById('f-notes').value=t.notes||'';
+  document.getElementById('freq-row').style.display=t.frequencyDays?'flex':'none';
+  push('add');
+}
+function toggleRecur() {
+  document.getElementById('freq-row').style.display=
+    document.getElementById('f-recur').checked?'flex':'none';
+}
+function resetForm() {
+  setEmoji('🐾');
+  ['f-name','f-shop','f-notes'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('f-recur').checked=true;
+  document.getElementById('f-freq').value='30';
+  document.getElementById('f-date').value=today();
+  document.getElementById('freq-row').style.display='flex';
+}
+function saveTask() {
+  const name=document.getElementById('f-name').value.trim(); if(!name) return;
+  const recur=document.getElementById('f-recur').checked;
+  const data={
+    name, emoji:document.getElementById('sel-emoji').textContent,
+    frequencyDays:recur?parseInt(document.getElementById('f-freq').value):null,
+    nextDue:document.getElementById('f-date').value||today(),
+    shopLink:document.getElementById('f-shop').value.trim(),
+    notes:document.getElementById('f-notes').value.trim()
+  };
+  if(editId) col.doc(editId).update(data);
+  else col.add({...data,lastCompleted:null,completions:[]});
+  goBack();
+}
+function deleteTask() {
+  if(!editId||!confirm('Delete this task?')) return;
+  col.doc(editId).delete();
+  goBack(); setTimeout(goBack,100); currentId=null;
+}
+
+// ── Emoji picker ──
+function setEmoji(e) {
+  document.getElementById('sel-emoji').textContent=e;
+  document.querySelectorAll('.e-btn').forEach(b=>b.classList.toggle('on',b.textContent===e));
+}
+document.getElementById('emoji-grid').innerHTML=
+  EMOJIS.map(e=>`<button class="e-btn${e==='🐾'?' on':''}" onclick="setEmoji('${e}')">${e}</button>`).join('');
+</script>
+</body>
+</html>
