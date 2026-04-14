@@ -45,6 +45,15 @@
     .screen.behind  { transform:translateX(-28%); }
     #home { transform:translateX(0); }
 
+    /* Add screen slides up from bottom */
+    #add {
+      transform:translateY(100%);
+      border-radius:20px 20px 0 0;
+      transition:transform .35s cubic-bezier(.4,0,.2,1);
+    }
+    #add.active { transform:translateY(0); border-radius:0; }
+    #add.behind { transform:translateY(0); }
+
     .scroll {
       flex:1; overflow-y:auto;
       -webkit-overflow-scrolling:touch;
@@ -492,9 +501,13 @@ function goBack() {
 // ── Firebase ──
 col.orderBy('nextDue').onSnapshot(snap => {
   tasks = snap.docs.map(d=>({id:d.id,...d.data()}));
+  if(tasks.length === 0 && !localStorage.getItem('lily_seeded')) {
+    localStorage.setItem('lily_seeded','1');
+    seed();
+  }
   renderHome();
   if(currentId) { const t=tasks.find(t=>t.id===currentId); if(t) renderDetail(t); }
-}, () => { if(!tasks.length) seed(); });
+}, err => { console.error(err); if(!tasks.length) seed(); });
 
 function seed() {
   [
